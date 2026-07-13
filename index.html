@@ -25,6 +25,29 @@
 
     .number {
         color: #a3a3a3;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        width: 100%;
+        gap: 10px;
+        text-align: left;
+    }
+
+    .label-text {
+        flex: 1;
+        white-space: nowrap;
+        text-align: left;
+    }
+
+    .meta {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        margin-left: auto;
+        gap: 6px;
+        min-height: 40px;
+        text-align: right;
     }
 
     .row-item {
@@ -36,13 +59,12 @@
         margin: 0 auto 12px;
         padding: 0 20px;
         width: fit-content;
-        min-width: 320px;
+        min-width: 420px;
     }
 
     .row-content {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         width: 100%;
     }
 
@@ -53,10 +75,12 @@
         border-radius: 8px;
     }
 
-    .timer {
-        margin-top: 20px;
-        font-size: 24px;
-         color: #d1d1d1;
+    .timer-inline {
+        display: inline-block;
+        margin-left: 6px;
+        font-size: 18px;
+        color: #d1d1d1;
+        white-space: nowrap;
     }
 
     .duo {
@@ -74,7 +98,7 @@
 .duo-image {
     height: 60px;
     vertical-align: middle;
-    margin-left: 6px;
+    margin-right: 0px;
 }
 .lock-image {
     height: 40px;
@@ -88,21 +112,17 @@
 
     <div class="duo">
 <div class="numbers">
-    <div class="row-item"><div class="row-content"><span id="n1" class="number">PERIMETER <span id="tag1"></span></span></div></div>
+    <div class="row-item"><div class="row-content"><span id="n1" class="number"><span class="label-text">PERIMETER</span><span class="meta"><span id="tag1"></span></span></span></div></div>
 
-    <div class="row-item"><div class="row-content"><span id="n2" class="number">DIRE MARSH <span id="tag2"></span></span></div></div>
+    <div class="row-item"><div class="row-content"><span id="n2" class="number"><span class="label-text">DIRE MARSH</span><span class="meta"><span id="tag2"></span></span></span></div></div>
 
-    <div class="row-item"><div class="row-content"><span id="n3" class="number">DIRE MARSH NIGHT <span id="tag3"></span></span></div></div>
+    <div class="row-item"><div class="row-content"><span id="n3" class="number"><span class="label-text">DIRE MARSH NIGHT</span><span class="meta"><span id="tag3"></span></span></span></div></div>
 
-    <div class="row-item"><div class="row-content"><span id="n4" class="number">OUTPOST <span id="tag4"></span></span></div></div>
+    <div class="row-item"><div class="row-content"><span id="n4" class="number"><span class="label-text">OUTPOST</span><span class="meta"><span id="tag4"></span></span></span></div></div>
 
-    <div class="row-item"><div class="row-content"><span id="n5" class="number">CRYO ARCHIVE<span id="tag5"></span></span></div></div>
+    <div class="row-item"><div class="row-content"><span id="n5" class="number"><span class="label-text">CRYO ARCHIVE</span><span class="meta"><span id="tag5"></span></span></span></div></div>
 </div>
 </div>
-
-<div id="cycleTimer" class="timer"></div>
-<div id="timer" class="timer"></div>
-<div id="cryoTimer" class="timer"></div>
 
 <script>
 function updateDisplay() {
@@ -110,7 +130,8 @@ function updateDisplay() {
     function updateLockIndicators() {
         for (let i = 1; i <= 5; i++) {
             const span = document.getElementById("n" + i);
-            const existingLock = span.querySelector(".lock-image");
+            const meta = span.querySelector(".meta");
+            const existingLock = meta.querySelector(".lock-image");
 
             if (span.classList.contains("inactive")) {
                 if (!existingLock) {
@@ -118,7 +139,7 @@ function updateDisplay() {
                     lockImage.src = "Lock.png";
                     lockImage.alt = "Locked";
                     lockImage.className = "lock-image";
-                    span.appendChild(lockImage);
+                    meta.appendChild(lockImage);
                 }
             } else if (existingLock) {
                 existingLock.remove();
@@ -126,12 +147,29 @@ function updateDisplay() {
         }
     }
 
+    function clearInlineTimers() {
+        for (let i = 1; i <= 5; i++) {
+            const span = document.getElementById("n" + i);
+            const meta = span.querySelector(".meta");
+            meta.querySelectorAll(".timer-inline").forEach((timer) => timer.remove());
+        }
+    }
+
+    function appendInlineTimer(spanId, text) {
+        const span = document.getElementById(spanId);
+        const meta = span.querySelector(".meta");
+        const timer = document.createElement("span");
+        timer.className = "timer-inline";
+        timer.textContent = text;
+        meta.appendChild(timer);
+    }
+
     const warsawTime = new Date().toLocaleString("en-US", {
         timeZone: "Europe/Warsaw"
     });
 
     const now = new Date(warsawTime);
-    updateCryoArchive(now);
+    const cryoState = updateCryoArchive(now);
 
     // Reference point:
     // 12.07.2026 19:00 Warsaw => highlighted number 3
@@ -239,11 +277,10 @@ function updateCryoArchive(now) {
         cryo.classList.add("inactive");
     }
 
-    // Timer
     let nextChange = new Date(now);
+    let timerText = "";
 
     if (active) {
-        // Find next Sunday 19:00
         const daysUntilSunday = (7 - day) % 7;
         nextChange.setDate(now.getDate() + daysUntilSunday);
         nextChange.setHours(19, 0, 0, 0);
@@ -253,15 +290,11 @@ function updateCryoArchive(now) {
         }
 
         const diff = nextChange - now;
-
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
-
-        document.getElementById("cryoTimer").textContent =
-            `Cryo Archive active for ${h}h ${m}m more`;
+        timerText = `Cryo Archive active for ${h}h ${m}m more`;
     }
     else {
-        // Find next Thursday 19:00
         const daysUntilThursday = (4 - day + 7) % 7;
 
         nextChange.setDate(now.getDate() + daysUntilThursday);
@@ -272,21 +305,22 @@ function updateCryoArchive(now) {
         }
 
         const diff = nextChange - now;
-
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
-
-        document.getElementById("cryoTimer").textContent =
-            `Cryo Archive unlocks in ${h}h ${m}m`;
+        timerText = `${h}h ${m}m`;
     }
+
+    return { active, timerText };
 }
 
 
-    document.getElementById("timer").textContent =
-        `Next Duo queue change in ${hours}h ${minutes}m`;
+    clearInlineTimers();
+    appendInlineTimer("n" + activeNumber, `${hours}h ${minutes}m`);
 
-document.getElementById("cycleTimer").textContent =
-    `Next Dire Marsh switch in ${cycleHours}h ${cycleMinutes}m`;
+    const cycleRowId = (cycleNumber % 2 === 0) ? "n3" : "n2";
+    appendInlineTimer(cycleRowId, `${cycleHours}h ${cycleMinutes}m`);
+
+    appendInlineTimer("n5", cryoState.timerText);
 }
 
 
