@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marathon Queue Status</title>
+
+<style>
+     @font-face { font-family: Marathon; src: url('PPFraktionMono-Bold.otf');
+}
+
+    body {
+        font-family: Marathon;
+        text-align: center;
+        margin-top: 50px;
+        background: #111;
+    }
+
+    .numbers {
+        margin-bottom: 30px;
+        font-size: 32px;
+        font-weight: bold;
+        display: block;
+    }
+
+    .number {
+        color: #a3a3a3;
+    }
+
+    .row-item {
+        background: #2c2c2c;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        padding: 0 20px;
+        width: fit-content;
+        min-width: 320px;
+    }
+
+    .row-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .active {
+        color: #76be22;
+        background: #636363;
+        padding: 5px 10px;
+        border-radius: 8px;
+    }
+
+    .timer {
+        margin-top: 20px;
+        font-size: 24px;
+         color: #d1d1d1;
+    }
+
+    .duo {
+        margin-top: 30px;
+        margin-bottom: 30px;
+        gap: 30px;
+        background: #111;
+        text-align: center;
+    }
+
+    .inactive {
+    color: #555 !important;
+}
+
+.duo-image {
+    height: 60px;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+.lock-image {
+    height: 40px;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+
+</style>
+</head>
+<body>
+
+    <div class="duo">
+<div class="numbers">
+    <div class="row-item"><div class="row-content"><span id="n1" class="number">PERIMETER <span id="tag1"></span></span></div></div>
+
+    <div class="row-item"><div class="row-content"><span id="n2" class="number">DIRE MARSH <span id="tag2"></span></span></div></div>
+
+    <div class="row-item"><div class="row-content"><span id="n3" class="number">DIRE MARSH NIGHT <span id="tag3"></span></span></div></div>
+
+    <div class="row-item"><div class="row-content"><span id="n4" class="number">OUTPOST <span id="tag4"></span></span></div></div>
+
+    <div class="row-item"><div class="row-content"><span id="n5" class="number">CRYO ARCHIVE<span id="tag5"></span></span></div></div>
+</div>
+</div>
+
+<div id="cycleTimer" class="timer"></div>
+<div id="timer" class="timer"></div>
+<div id="cryoTimer" class="timer"></div>
+
+<script>
+function updateDisplay() {
+
+    function updateLockIndicators() {
+        for (let i = 1; i <= 5; i++) {
+            const span = document.getElementById("n" + i);
+            const existingLock = span.querySelector(".lock-image");
+
+            if (span.classList.contains("inactive")) {
+                if (!existingLock) {
+                    const lockImage = document.createElement("img");
+                    lockImage.src = "Lock.png";
+                    lockImage.alt = "Locked";
+                    lockImage.className = "lock-image";
+                    span.appendChild(lockImage);
+                }
+            } else if (existingLock) {
+                existingLock.remove();
+            }
+        }
+    }
+
+    const warsawTime = new Date().toLocaleString("en-US", {
+        timeZone: "Europe/Warsaw"
+    });
+
+    const now = new Date(warsawTime);
+    updateCryoArchive(now);
+
+    // Reference point:
+    // 12.07.2026 19:00 Warsaw => highlighted number 3
+    const startDate = new Date(2026, 6, 12, 19, 0, 0);
+
+    let daysPassed = Math.floor(
+        (now - startDate) / (24 * 60 * 60 * 1000)
+    );
+
+    if (daysPassed < 0) {
+        daysPassed = 0;
+    }
+
+    const sequence = [3, 4, 1, 2];
+    const activeNumber = sequence[daysPassed % 4];
+
+// Clear all Duo tags
+for (let i = 1; i <= 4; i++) {
+    const tag = document.getElementById("tag" + i);
+    tag.textContent = "";
+    tag.replaceChildren();
+}
+
+// Add Duo image to current map
+const activeTag = document.getElementById("tag" + activeNumber);
+activeTag.textContent = "";
+const duoImage = document.createElement("img");
+duoImage.src = "DuoLogo.png";
+duoImage.alt = "Duo";
+duoImage.className = "duo-image";
+activeTag.appendChild(duoImage);
+
+    // Calculate next 19:00 Warsaw
+    const nextChange = new Date(now);
+
+    if (now.getHours() >= 19) {
+        nextChange.setDate(nextChange.getDate() + 1);
+    }
+
+    nextChange.setHours(19, 0, 0, 0);
+
+    const diff = nextChange - now;
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor(
+        (diff % (1000 * 60 * 60)) / (1000 * 60)
+    );
+
+// Day Night
+    document.getElementById("n2").classList.remove("inactive");
+document.getElementById("n3").classList.remove("inactive");
+
+const cycleStart = new Date(2026, 6, 12, 19, 0, 0);
+const cycleLength = 90 * 60 * 1000;
+
+const cycleNumber = Math.floor(
+    (now - cycleStart) / cycleLength
+);
+
+if (cycleNumber % 2 === 0) {
+    document.getElementById("n3").classList.add("inactive");
+} else {
+    document.getElementById("n2").classList.add("inactive");
+}
+
+updateLockIndicators();
+
+// Calculate time remaining for 1.5h cycle
+const nextCycleChange = new Date(
+    cycleStart.getTime() + (cycleNumber + 1) * cycleLength
+);
+
+const cycleDiff = nextCycleChange - now;
+
+const cycleHours = Math.floor(
+    cycleDiff / (1000 * 60 * 60)
+);
+
+const cycleMinutes = Math.floor(
+    (cycleDiff % (1000 * 60 * 60)) / (1000 * 60)
+);
+
+// Cryo Archive
+function updateCryoArchive(now) {
+    const cryo = document.getElementById("n5");
+
+    cryo.classList.remove("inactive");
+
+    const day = now.getDay(); // 0=Sun, 1=Mon, ..., 4=Thu
+    const hour = now.getHours();
+
+    let active = false;
+
+    if (day === 4 && hour >= 19) {
+        active = true;
+    } else if (day === 5) {
+        active = true;
+    } else if (day === 6) {
+        active = true;
+    } else if (day === 0 && hour < 19) {
+        active = true;
+    }
+
+    if (!active) {
+        cryo.classList.add("inactive");
+    }
+
+    // Timer
+    let nextChange = new Date(now);
+
+    if (active) {
+        // Find next Sunday 19:00
+        const daysUntilSunday = (7 - day) % 7;
+        nextChange.setDate(now.getDate() + daysUntilSunday);
+        nextChange.setHours(19, 0, 0, 0);
+
+        if (day === 0 && hour >= 19) {
+            nextChange.setDate(nextChange.getDate() + 7);
+        }
+
+        const diff = nextChange - now;
+
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+
+        document.getElementById("cryoTimer").textContent =
+            `Cryo Archive active for ${h}h ${m}m more`;
+    }
+    else {
+        // Find next Thursday 19:00
+        const daysUntilThursday = (4 - day + 7) % 7;
+
+        nextChange.setDate(now.getDate() + daysUntilThursday);
+        nextChange.setHours(19, 0, 0, 0);
+
+        if (day === 4 && hour >= 19) {
+            nextChange.setDate(nextChange.getDate() + 7);
+        }
+
+        const diff = nextChange - now;
+
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+
+        document.getElementById("cryoTimer").textContent =
+            `Cryo Archive unlocks in ${h}h ${m}m`;
+    }
+}
+
+
+    document.getElementById("timer").textContent =
+        `Next Duo queue change in ${hours}h ${minutes}m`;
+
+document.getElementById("cycleTimer").textContent =
+    `Next Dire Marsh switch in ${cycleHours}h ${cycleMinutes}m`;
+}
+
+
+updateDisplay();
+setInterval(updateDisplay, 1000);
+</script>
+
+</body>
+</html>
