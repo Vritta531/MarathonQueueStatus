@@ -13,12 +13,14 @@
         font-family: Marathon;
         text-align: center;
         margin-top: 50px;
+        margin-left: 10px;
+        margin-right: 10px;
         background: #111;
     }
 
     .numbers {
         margin-bottom: 30px;
-        font-size: 20px;
+        font-size: 24px;
         font-weight: bold;
         display: block;
     }
@@ -52,14 +54,14 @@
 
     .row-item {
         background: #2c2c2c;
-        height: 45px;
+        height: 60px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0 auto 12px;
         padding: 0 20px;
         width: fit-content;
-        min-width: 380px;
+        min-width: 420px;
     }
 
     .row-content {
@@ -70,8 +72,8 @@
 
     .timer-inline {
         display: inline-block;
-        margin-left: 6px;
-        font-size: 14px;
+        margin-left: 0px;
+        font-size: 18px;
         color: #d1d1d1;
         white-space: nowrap;
     }
@@ -85,23 +87,23 @@
     }
 
     .inactive {
-    color: #555 !important;
+    color: #555;
 }
 
 .duo-image {
-    height: 45px;
+    height: 60px;
     vertical-align: middle;
     margin-right: 0px;
 }
 .ranked-image {
-    height: 45px;
+    height: 60px;
     vertical-align: middle;
-    margin-left: 6px;
+    margin-left: 2px;
 }
 .lock-image {
-    height: 30px;
+    height: 40px;
     vertical-align: middle;
-    margin-left: 6px;
+    margin-left: 2px;
 }
 
 .ranked-notice {
@@ -116,7 +118,12 @@
     body { margin-top: 30px; }
     .numbers { font-size: 20px; }
     .label-text { font-size: 18px; }
-    .row-item { min-width: 320px; height: 50px; padding: 0 12px; }
+    .row-item {         box-sizing: border-box;
+        width: calc(100% - 12px) !important;
+        min-width: calc(100% - 12px) !important;
+        max-width: calc(100% - 12px) !important;
+        height: 50px;
+        padding: 0 6px; }
     .duo-image, .ranked-image { height: 48px; }
     .lock-image { height: 32px; }
     .timer-inline { font-size: 16px; margin-left: 4px; }
@@ -127,7 +134,14 @@
     body { margin-top: 20px; }
     .numbers { font-size: 18px; }
     .label-text { font-size: 16px; }
-    .row-item { min-width: 260px; height: 44px; padding: 0 8px; }
+    .row-item {
+        box-sizing: border-box;
+        width: calc(100% - 12px) !important;
+        min-width: calc(100% - 12px) !important;
+        max-width: calc(100% - 12px) !important;
+        height: 44px;
+        padding: 0 6px;
+    }
     .duo-image, .ranked-image { height: 36px; }
     .lock-image { height: 28px; }
     .timer-inline { font-size: 14px; margin-left: 4px; }
