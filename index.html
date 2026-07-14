@@ -18,7 +18,7 @@
 
     .numbers {
         margin-bottom: 30px;
-        font-size: 20px;
+        font-size: 24px;
         font-weight: bold;
         display: block;
     }
@@ -52,14 +52,14 @@
 
     .row-item {
         background: #2c2c2c;
-        height: 45px;
+        height: 60px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0 auto 12px;
         padding: 0 20px;
         width: fit-content;
-        min-width: 360px;
+        min-width: 380px;
     }
 
     .row-content {
@@ -68,17 +68,10 @@
         width: 100%;
     }
 
-    .active {
-        color: #76be22;
-        background: #636363;
-        padding: 5px 10px;
-        border-radius: 8px;
-    }
-
     .timer-inline {
         display: inline-block;
-        margin-left: 4px;
-        font-size: 16px;
+        margin-left: 6px;
+        font-size: 18px;
         color: #d1d1d1;
         white-space: nowrap;
     }
@@ -96,14 +89,49 @@
 }
 
 .duo-image {
-    height: 45px;
+    height: 60px;
     vertical-align: middle;
     margin-right: 0px;
 }
-.lock-image {
-    height: 30px;
+.ranked-image {
+    height: 60px;
     vertical-align: middle;
     margin-left: 6px;
+}
+.lock-image {
+    height: 40px;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+
+.ranked-notice {
+    display: block;
+    color: #d1d1d1;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 900px) {
+    body { margin-top: 30px; }
+    .numbers { font-size: 20px; }
+    .label-text { font-size: 18px; }
+    .row-item { min-width: 320px; height: 50px; padding: 0 12px; }
+    .duo-image, .ranked-image { height: 48px; }
+    .lock-image { height: 32px; }
+    .timer-inline { font-size: 16px; margin-left: 4px; }
+    .ranked-notice { font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+    body { margin-top: 20px; }
+    .numbers { font-size: 18px; }
+    .label-text { font-size: 16px; }
+    .row-item { min-width: 260px; height: 44px; padding: 0 8px; }
+    .duo-image, .ranked-image { height: 36px; }
+    .lock-image { height: 28px; }
+    .timer-inline { font-size: 14px; margin-left: 4px; }
+    .ranked-notice { font-size: 11px; }
 }
 
 </style>
@@ -162,6 +190,10 @@ function updateDisplay() {
         timer.className = "timer-inline";
         timer.textContent = text;
         meta.appendChild(timer);
+    }
+
+    function pad2(n) {
+        return String(n).padStart(2, '0');
     }
 
     const warsawTime = new Date().toLocaleString("en-US", {
@@ -292,7 +324,7 @@ function updateCryoArchive(now) {
         const diff = nextChange - now;
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
-        timerText = `Cryo Archive active for ${h}h ${m}m more`;
+        timerText = `Cryo Archive active for ${pad2(h)}h ${pad2(m)}m more`;
     }
     else {
         const daysUntilThursday = (4 - day + 7) % 7;
@@ -307,22 +339,145 @@ function updateCryoArchive(now) {
         const diff = nextChange - now;
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
-        timerText = `${h}h ${m}m`;
+        timerText = `${pad2(h)}h ${pad2(m)}m`;
     }
 
     return { active, timerText };
 }
 
+// Ranked
+function updateRanked(now) {
+    // remove existing ranked images and notices
+    for (let i = 1; i <= 5; i++) {
+        const span = document.getElementById("n" + i);
+        const meta = span.querySelector(".meta");
+        const existing = meta.querySelector(".ranked-image");
+        if (existing) existing.remove();
+        const rowItem = span.closest('.row-item');
+        if (rowItem) {
+            const existingNotice = rowItem.querySelector('.ranked-notice');
+            if (existingNotice) existingNotice.remove();
+        }
+    }
 
-    clearInlineTimers();
-    appendInlineTimer("n" + activeNumber, `${hours}h ${minutes}m`);
+    // rotation sequence (exclude n3 and n5)
+    const reference = new Date(2026, 6, 12, 19, 0, 0); // Sunday 12.07.2026 19:00
+    let weeksPassed = Math.floor((now - reference) / (7 * 24 * 60 * 60 * 1000));
+    if (weeksPassed < 0) weeksPassed = 0;
+    const seq = [2, 4, 1]; // starts at n2 on reference date
+    const idx = weeksPassed % seq.length;
+    const target = seq[idx];
+    const spanId = "n" + target;
 
-    const cycleRowId = (cycleNumber % 2 === 0) ? "n3" : "n2";
-    appendInlineTimer(cycleRowId, `${cycleHours}h ${cycleMinutes}m`);
+    const day = now.getDay(); // 0=Sun
+    const hour = now.getHours();
 
-    appendInlineTimer("n5", cryoState.timerText);
+    // active between Sunday 19:00 and Thursday 19:00
+    let active = false;
+    if ((day === 0 && hour >= 19) || (day >= 1 && day <= 3) || (day === 4 && hour < 19)) {
+        active = true;
+    }
+
+    let nextChange = new Date(now);
+    let timerText = "";
+
+    if (active) {
+        // next change is Thursday 19:00
+        let daysUntilThursday = (4 - day + 7) % 7;
+        nextChange.setDate(now.getDate() + daysUntilThursday);
+        nextChange.setHours(19, 0, 0, 0);
+        if (day === 4 && hour >= 19) {
+            nextChange.setDate(nextChange.getDate() + 7);
+        }
+        const diff = nextChange - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        timerText = `${pad2(h)}h ${pad2(m)}m`;
+
+        // append ranked image to the target span, after lock-image and its timers
+        if (target !== 3 && target !== 5) {
+            const span = document.getElementById(spanId);
+            const meta = span.querySelector('.meta');
+            const tag = document.getElementById('tag' + target);
+            tag.textContent = '';
+            const img = document.createElement('img');
+            img.src = 'ranked.png';
+            img.alt = 'Ranked';
+            img.className = 'ranked-image duo-image';
+
+            // find last node among lock-image and timer-inline
+            let last = null;
+            Array.from(meta.children).forEach((ch) => {
+                if (ch.classList && (ch.classList.contains('lock-image') || ch.classList.contains('timer-inline'))) {
+                    last = ch;
+                }
+            });
+
+            if (last && last.nextSibling) {
+                meta.insertBefore(img, last.nextSibling);
+            } else if (last) {
+                meta.appendChild(img);
+            } else {
+                // nothing to place after, append to meta
+                meta.appendChild(img);
+            }
+
+            // insert ranked timer immediately after the ranked image
+            const timerEl = document.createElement('span');
+            timerEl.className = 'timer-inline';
+            timerEl.textContent = timerText;
+            if (img.nextSibling) meta.insertBefore(timerEl, img.nextSibling);
+            else meta.appendChild(timerEl);
+        }
+    } else {
+        // next activation is next Sunday 19:00
+        const daysUntilSunday = (7 - day) % 7;
+        nextChange.setDate(now.getDate() + daysUntilSunday);
+        nextChange.setHours(19, 0, 0, 0);
+        if (day === 0 && hour >= 19) {
+            nextChange.setDate(nextChange.getDate() + 7);
+        }
+        const diff = nextChange - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        timerText = `${pad2(h)}h ${pad2(m)}m`;
+
+        // build message for all spans
+        const targetLabel = (function() {
+            try {
+                const lbl = document.querySelector('#' + spanId + ' .label-text');
+                return lbl ? lbl.textContent : '';
+            } catch (e) { return ''; }
+        })();
+
+        const message = `RANKED WILL BE ACTIVE FOR ${targetLabel} in ${timerText}`;
+
+        // append the message under each row
+        for (let i = 1; i <= 5; i++) {
+            const span = document.getElementById('n' + i);
+            const rowItem = span.closest('.row-item');
+            if (rowItem) {
+                const notice = document.createElement('div');
+                notice.className = 'ranked-notice';
+                notice.textContent = message;
+                rowItem.appendChild(notice);
+            }
+        }
+    }
+
+    return { active, timerText, spanId };
 }
 
+    clearInlineTimers();
+    appendInlineTimer("n" + activeNumber, `${pad2(hours)}h ${pad2(minutes)}m`);
+
+    const cycleRowId = (cycleNumber % 2 === 0) ? "n3" : "n2";
+    appendInlineTimer(cycleRowId, `${pad2(cycleHours)}h ${pad2(cycleMinutes)}m`);
+
+    appendInlineTimer("n5", cryoState.timerText);
+
+    updateRanked(now);
+}
 
 updateDisplay();
 setInterval(updateDisplay, 1000);
