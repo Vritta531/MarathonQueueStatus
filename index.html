@@ -54,12 +54,13 @@
 
     .row-item {
         background: #2c2c2c;
-        height: 60px;
+        min-height: 60px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         margin: 0 auto 12px;
-        padding: 0 20px;
+        padding: 10px 20px;
         width: fit-content;
         min-width: 420px;
     }
@@ -113,7 +114,12 @@
     margin-top: 6px;
 }
 
-/* Responsive adjustments for smaller screens */
+.ranked-notice-container {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 14px;
+    }
+    /* Responsive adjustments for smaller screens */
 @media (max-width: 900px) {
     body { margin-top: 30px; }
     .numbers { font-size: 20px; }
@@ -122,8 +128,8 @@
         width: calc(100% - 12px) !important;
         min-width: calc(100% - 12px) !important;
         max-width: calc(100% - 12px) !important;
-        height: 50px;
-        padding: 0 6px; }
+        min-height: 50px;
+        padding: 8px 6px; }
     .duo-image, .ranked-image { height: 50px; }
     .lock-image { height: 32px; }
     .timer-inline { font-size: 16px; margin-left: 4px; }
@@ -139,8 +145,8 @@
         width: calc(100% - 12px) !important;
         min-width: calc(100% - 12px) !important;
         max-width: calc(100% - 12px) !important;
-        height: 44px;
-        padding: 0 6px;
+        min-height: 44px;
+        padding: 8px 6px;
     }
     .duo-image, .ranked-image { height: 44px; }
     .lock-image { height: 28px; }
@@ -164,6 +170,7 @@
 
     <div class="row-item"><div class="row-content"><span id="n5" class="number"><span class="label-text">CRYO ARCHIVE</span><span class="meta"><span id="tag5"></span></span></span></div></div>
 </div>
+<div id="ranked-notice-container" class="ranked-notice-container"></div>
 </div>
 
 <script>
@@ -338,7 +345,7 @@ function updateCryoArchive(now) {
         const diff = nextChange - now;
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
-        timerText = `Cryo Archive active for ${pad2(h)}h ${pad2(m)}m more`;
+        timerText = `${pad2(h)}h ${pad2(m)}m`;
     }
     else {
         const daysUntilThursday = (4 - day + 7) % 7;
@@ -367,11 +374,11 @@ function updateRanked(now) {
         const meta = span.querySelector(".meta");
         const existing = meta.querySelector(".ranked-image");
         if (existing) existing.remove();
-        const rowItem = span.closest('.row-item');
-        if (rowItem) {
-            const existingNotice = rowItem.querySelector('.ranked-notice');
-            if (existingNotice) existingNotice.remove();
-        }
+    }
+
+    const noticeContainer = document.getElementById('ranked-notice-container');
+    if (noticeContainer) {
+        noticeContainer.innerHTML = '';
     }
 
     // rotation sequence (exclude n3 and n5)
@@ -464,18 +471,14 @@ function updateRanked(now) {
             } catch (e) { return ''; }
         })();
 
-        const message = `RANKED WILL BE ACTIVE FOR ${targetLabel} in ${timerText}`;
+        const message = `RANKED WILL BE ACTIVE FOR ${targetLabel} IN ${timerText}`;
 
-        // append the message under each row
-        for (let i = 1; i <= 5; i++) {
-            const span = document.getElementById('n' + i);
-            const rowItem = span.closest('.row-item');
-            if (rowItem) {
-                const notice = document.createElement('div');
-                notice.className = 'ranked-notice';
-                notice.textContent = message;
-                rowItem.appendChild(notice);
-            }
+        // append the message to the separate notice container
+        if (noticeContainer) {
+            const notice = document.createElement('span');
+            notice.className = 'ranked-notice';
+            notice.textContent = message;
+            noticeContainer.appendChild(notice);
         }
     }
 
